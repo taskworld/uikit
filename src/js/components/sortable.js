@@ -25,10 +25,24 @@
         return ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
     })(),
 
-    draggingPlaceholder, moving, dragging, clickedlink, delayIdle;
+    draggingPlaceholder, currentlyDraggingElement, moving, dragging, clickedlink, delayIdle, touchedlists;
 
     // disable native dragndrop support for now
     supportsDragAndDrop = false;
+
+    function closestSortable(ele) {
+
+        ele = UI.$(ele);
+
+        do {
+            if (ele.data('sortable')) {
+                return ele;
+            }
+            ele = UI.$(ele).parent();
+        } while(ele.length);
+
+        return ele;
+    }
 
     UI.component('sortable', {
 
@@ -43,6 +57,7 @@
             overClass        : 'uk-sortable-over',
             draggingClass    : 'uk-sortable-dragged',
             dragMovingClass  : 'uk-sortable-moving',
+            baseClass        : 'uk-sortable',
             dragCustomClass  : '',
             handleClass      : false,
 
@@ -103,11 +118,17 @@
                 }
             });
 
-            UI.$html.on('mouseup touchend', function() {
+            UI.$html.on('mouseup touchend', function(e) {
+
+                // console.log(closestSortable(e.target));
+                // TODO: check if e.target is inside a sortable
+                // if that is the case: trigger drop/dragEnd events
 
                 if(!moving && clickedlink) {
                     location.href = clickedlink.attr('href');
                 }
+
+
 
                 delayIdle = clickedlink = false;
             });
@@ -117,9 +138,10 @@
 
             var $this                    = this,
                 element                  = this.element[0],
-                currentlyDraggingElement = null,
                 currentlyDraggingTarget  = null,
                 children;
+
+            touchedlists = [];
 
             Object.keys(this.options).forEach(function(key){
 
@@ -128,12 +150,12 @@
                 }
             });
 
+            UI.$(this.element).data('sortable-group', this.options.group );
+
             if (supportsDragAndDrop) {
                 this.element.children().attr("draggable", "true");
-
             } else {
 
-                // prevent leaving page after link clicking
                 // prevent leaving page after link clicking
                 this.element.on('mousedown touchstart', 'a[href]', function(e) {
                     // don't break browser shortcuts for click+open in new tab
@@ -203,13 +225,18 @@
                             width   : $current.width(),
                             height  : $current.height(),
                             padding : $current.css('padding')
-                        }).data('mouse-offset', {
-                            'left': offset.left - parseInt(e.pageX, 10),
-                            'top' : offset.top  - parseInt(e.pageY, 10)
+                        }).data({
+                            'mouse-offset': {
+                                'left'   : offset.left - parseInt(e.pageX, 10),
+                                'top'    : offset.top  - parseInt(e.pageY, 10)
+                            },
+                            'origin' : $this.element,
+                            'index'  : $current.index()
                         }).append($current.html()).appendTo('body');
 
                         draggingPlaceholder.$current  = $current;
                         draggingPlaceholder.$sortable = $this;
+                        $current.data('sortable-group', $this.options.group);
 
                         addFakeDragHandlers();
 
@@ -276,7 +303,6 @@
 
             var handleDrop = delegate(function(e) {
 
-
                 if (e.type === 'drop') {
 
                     if (e.stopPropagation) {
@@ -301,31 +327,64 @@
                     UI.Utils.checkDisplay($this.element.parent());
                 }
 
-                $this.options.change(this, currentlyDraggingElement);
-                $this.trigger('change.uk.sortable', [$this, currentlyDraggingElement]);
+                triggerChangeEvents();
             });
 
+            var triggerChangeEvents = function() {
+
+                // trigger events once
+                if (!currentlyDraggingElement) return;
+
+                var $current = UI.$(currentlyDraggingElement),
+                    oldRoot  = draggingPlaceholder.data("origin"),
+                    newRoot  = $current.closest('.'+$this.options.baseClass),
+                    triggers = [];
+
+                // events depending on move inside lists or across lists
+                if (oldRoot[0] === newRoot[0] && draggingPlaceholder.data('index') != $current.index() ) {
+                    triggers.push({el: $this, mode: 'moved'});
+                } else if (oldRoot[0] != newRoot[0]) {
+                    triggers.push({el: newRoot, mode: 'added'}, {el: oldRoot, mode: 'removed'});
+                }
+
+                triggers.forEach(function (trigger, i) {
+                    // trigger.el.data("sortable").options.change(this, currentlyDraggingElement, trigger.mode);
+                    trigger.el.trigger('change.uk.sortable', [trigger.el, currentlyDraggingElement, trigger.mode]);
+                });
+            }
+
             var handleDragEnd = function(e) {
+
+                // avoid triggering event twice
+                if (currentlyDraggingElement) {
+                    // todo: trigger on right element
+                    $this.options.stop(this);
+                    $this.trigger('stop.uk.sortable', [$this]);
+                };
 
                 currentlyDraggingElement = null;
                 currentlyDraggingTarget  = null;
 
-                $this.element.children().each(function() {
-                    if (this.nodeType === 1) {
-                        UI.$(this).removeClass($this.options.overClass).removeClass($this.options.placeholderClass).removeClass($this.options.childClass);
-                        $this.dragenterData(this, false);
-                    }
+                touchedlists.push($this.element);
+                touchedlists.forEach(function(el, i) {
+                    UI.$(el).children().each(function() {
+                        if (this.nodeType === 1) {
+                            UI.$(this).removeClass($this.options.overClass).removeClass($this.options.placeholderClass).removeClass($this.options.childClass);
+                            $this.dragenterData(this, false);
+                        }
+                    });
                 });
 
-                UI.$('html').removeClass($this.options.dragMovingClass);
+                touchedlists = [];
+
+                UI.$html.removeClass($this.options.dragMovingClass);
 
                 removeFakeDragHandlers();
 
-                $this.options.stop(this);
-                $this.trigger('stop.uk.sortable', [$this]);
-
-                draggingPlaceholder.remove();
-                draggingPlaceholder = null;
+                if (draggingPlaceholder) {
+                    draggingPlaceholder.remove();
+                    draggingPlaceholder = null;
+                }
             };
 
             var handleTouchMove = delegate(function(e) {
@@ -348,30 +407,7 @@
                 return prevent(e);
             });
 
-            function delegate(fn) {
-                return function(e) {
 
-                    var touch  = (supportsTouch && e.touches && e.touches[0]) || { },
-                        target = touch.target || e.target;
-
-                    // Fix event.target for a touch event
-                    if (supportsTouch && document.elementFromPoint) {
-                        target = document.elementFromPoint(e.pageX - document.body.scrollLeft, e.pageY - document.body.scrollTop);
-                    }
-
-                    if (UI.$(target).hasClass($this.options.childClass)) {
-                        fn.apply(target, [e]);
-                    } else if (target !== element) {
-
-                        // If a child is initiating the event or ending it, then use the container as context for the callback.
-                        var context = moveUpToChildNode(element, target);
-
-                        if (context) {
-                            fn.apply(context, [e]);
-                        }
-                    }
-                };
-            }
 
             // Opera and mobile devices do not support drag and drop.  http://caniuse.com/dragndrop
             // Bind/unbind standard mouse/touch events as a polyfill.
@@ -391,6 +427,8 @@
                 }
             }
 
+            this.addFakeDragHandlers = addFakeDragHandlers;
+
             function removeFakeDragHandlers() {
                 if (!supportsDragAndDrop) {
                     if (supportsTouch) {
@@ -405,6 +443,64 @@
                     document.removeEventListener("selectstart", prevent, false);
                 }
             }
+
+            function handleDragMove(e) {
+
+                if (!currentlyDraggingElement) {
+                    return;
+                }
+                var overEl       = UI.$(document.elementFromPoint(e.pageX - document.body.scrollLeft, e.pageY - (window.pageYOffset || document.documentElement.scrollTop))),
+                    overRoot     = overEl.closest('.'+$this.options.baseClass),
+                    groupOver    = overRoot.data("sortable-group"),
+                    $current     = UI.$(currentlyDraggingElement),
+                    currentRoot  = $current.parent(),
+                    groupCurrent = $current.data("sortable-group"),
+                    overChild;
+
+                if (overRoot[0] !== currentRoot[0] && groupOver === groupCurrent) {
+                    overRoot.data('sortable').addFakeDragHandlers();
+
+                    touchedlists.push(overRoot);
+                    overRoot.children().addClass($this.options.childClass);
+
+                    // swap root
+                    overChild = overEl.closest('.'+$this.options.childClass);
+                    overChild.before($current);
+
+                    UIkit.$doc.trigger('mouseover');
+                };
+
+            }
+
+            function delegate(fn) {
+
+                return function(e) {
+
+                    if (e) {
+                        var touch  = (supportsTouch && e.touches && e.touches[0]) || { },
+                            target = touch.target || e.target;
+
+                        // Fix event.target for a touch event
+                        if (supportsTouch && document.elementFromPoint) {
+                            target = document.elementFromPoint(e.pageX - document.body.scrollLeft, e.pageY - document.body.scrollTop);
+                        }
+                    }
+
+                    if (UI.$(target).hasClass($this.options.childClass)) {
+                        fn.apply(target, [e]);
+                    } else if (target !== element) {
+
+                        // If a child is initiating the event or ending it, then use the container as context for the callback.
+                        var context = moveUpToChildNode(element, target);
+
+                        if (context) {
+                            fn.apply(context, [e]);
+                        }
+                    }
+                };
+            }
+
+            window.addEventListener('mousemove', handleDragMove, false);
 
             if (supportsDragAndDrop) {
                 element.addEventListener('dragstart', handleDragStart, false);
@@ -542,6 +638,8 @@
         }
         e.returnValue = false;
     }
+
+
 
     return UI.sortable;
 });
