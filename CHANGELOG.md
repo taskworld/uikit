@@ -13,6 +13,7 @@
   - Added more position classes to utility component
   - Added hover classes to panel component
   - Added icon hover class to icon component
+  - Added uk-heading-large default values for small screens in utility component
   - Added scrollspy group with target selector
   - Added possibility to create dynamic lightboxes
   - Added manualclose.uk.notify and close.uk.notify events
@@ -24,9 +25,12 @@
   - Updated icon component to FontAwesome to 4.3.0
   - Set content wrapper height to auto after accordion animation ends
   - Deactivated browser history navigation in modal for IE11
+  - Fixed modal caption text overflow
+  - Fixed modal min-height. Now only applies to lightbox modifier
   - Fixed events in grid js component
   - Fixed quick switching between tabs
   - Fixed deep target selector for data-uk-grid-match
+  - Fixed goto dom trigger for slideshows
 
   **Docs and Repo**
 
