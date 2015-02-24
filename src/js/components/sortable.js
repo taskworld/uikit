@@ -25,7 +25,7 @@
         return ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
     })(),
 
-    draggingPlaceholder, currentlyDraggingElement, currentlyDraggingTarget, moving, dragging, clickedlink, delayIdle, touchedlists;
+    draggingPlaceholder, currentlyDraggingElement, currentlyDraggingTarget, dragging, moving, clickedlink, delayIdle, touchedlists;
 
     // disable native dragndrop support for now
     supportsDragAndDrop = false;
@@ -127,18 +127,18 @@
 
                 delayIdle = clickedlink = false;
 
-                // // dragging?
-                // if (!currentlyDraggingElement) return;
+                // dragging?
+                if (!currentlyDraggingElement || !draggingPlaceholder) return;
 
-                // // inside or outside of sortable?
-                // var sortable  = closestSortable(e.target),
-                //     component = draggingPlaceholder.$sortable,
-                //     ev        = { type: e.type };
+                // inside or outside of sortable?
+                var sortable  = closestSortable(e.target),
+                    component = draggingPlaceholder.$sortable,
+                    ev        = { type: e.type };
 
-                // if (sortable.length) {
-                //     component.dragDrop(ev, component.element);
-                // }
-                // component.dragEnd(ev, component.element);
+                if (sortable[0]) {
+                    component.dragDrop(ev, component.element);
+                }
+                component.dragEnd(ev, component.element);
 
             });
         },
@@ -255,8 +255,8 @@
                     }
 
                     element.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDrop, false);
-                    document.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
-                    document.addEventListener("selectstart", prevent, false);
+                    // document.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
+                    // document.addEventListener("selectstart", prevent, false);
 
                 }
             }
@@ -271,8 +271,8 @@
                     }
 
                     element.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDrop, false);
-                    document.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
-                    document.removeEventListener("selectstart", prevent, false);
+                    // document.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
+                    // document.removeEventListener("selectstart", prevent, false);
                 }
             }
 
@@ -422,7 +422,7 @@
                 groupCurrent = $current.data("sortable-group"),
                 overChild;
 
-            if (overRoot[0] !== currentRoot[0] && groupOver === groupCurrent) {
+            if (overRoot[0] !== currentRoot[0] && groupCurrent !== undefined && groupOver === groupCurrent) {
                 overRoot.data('sortable').addFakeDragHandlers();
 
                 touchedlists.push(overRoot);
@@ -508,10 +508,6 @@
                 if (e.preventDefault) {
                     e.preventDefault();
                 }
-            }
-
-            if (!dragging && !this.options.warp) {
-                return;
             }
 
             if (this.options.warp) {
