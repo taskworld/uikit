@@ -110,7 +110,7 @@
 
                     draggingPlaceholder.css({'left': left, 'top': top });
 
-                     // adjust document scrolling
+                    // adjust document scrolling
                     if (top < UI.$win.scrollTop()) {
                         UI.$win.scrollTop(UI.$win.scrollTop() - Math.ceil(draggingPlaceholder.height()/2));
                     } else if ( (top + draggingPlaceholder.height()) > (window.innerHeight + UI.$win.scrollTop()) ) {
@@ -121,22 +121,32 @@
 
             UI.$html.on('mouseup touchend', function(e) {
 
-                // console.log(closestSortable(e.target));
-                // TODO: check if e.target is inside a sortable
-                // if that is the case: trigger drop/dragEnd events
-
                 if(!moving && clickedlink) {
                     location.href = clickedlink.attr('href');
                 }
 
                 delayIdle = clickedlink = false;
+
+                // // dragging?
+                // if (!currentlyDraggingElement) return;
+
+                // // inside or outside of sortable?
+                // var sortable  = closestSortable(e.target),
+                //     component = draggingPlaceholder.$sortable,
+                //     ev        = { type: e.type };
+
+                // if (sortable.length) {
+                //     component.dragDrop(ev, component.element);
+                // }
+                // component.dragEnd(ev, component.element);
+
             });
         },
 
         init: function() {
 
-            var $this                    = this,
-                element                  = this.element[0],
+            var $this   = this,
+                element = this.element[0],
                 children;
 
             touchedlists = [];
