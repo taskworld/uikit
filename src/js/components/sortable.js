@@ -172,8 +172,7 @@
             }
 
             var handleDragStart = delegate(function(e) {
-                e.thisElem = this;
-                return $this.dragStart(e);
+                return $this.dragStart(e, this);
             });
 
             var handleDragOver = delegate(function(e) {
@@ -190,8 +189,7 @@
             });
 
             var handleDragEnter = delegate(UI.Utils.debounce(function(e) {
-                e.thisElem = this;
-                return $this.dragEnter(e);
+                return $this.dragEnter(e, this);
             }), 40);
 
             var handleDragLeave = delegate(function(e) {
@@ -208,14 +206,11 @@
             });
 
             var handleDrop = delegate(function(e) {
-                // TODO: figure out a better way on $this vs this issue
-                e.thisElem = this;
-                return $this.dragDrop(e);
+                return $this.dragDrop(e, this);
             });
 
-
             var handleDragEnd = function(e) {
-                return $this.dragEnd(e);
+                return $this.dragEnd(e, this);
             };
 
             var handleTouchMove = delegate(function(e) {
@@ -280,7 +275,7 @@
                     return;
                 }
 
-                $this.dragMove(e);
+                $this.dragMove(e, this);
 
             }
 
@@ -327,14 +322,14 @@
             }
         },
 
-        dragStart: function(e) {
-
-            var $this = this;
+        dragStart: function(e, elem) {
 
             moving = false;
             dragging = false;
 
-            var target = UI.$(e.target), children = $this.element.children();
+            var $this = this,
+                target = UI.$(e.target),
+                children = $this.element.children();
 
             if (!supportsTouch && e.button==2) {
                 return;
@@ -361,7 +356,7 @@
                 e.dataTransfer.setData('Text', "*"); // Need to set to something or else drag doesn't start
             }
 
-            currentlyDraggingElement = e.thisElem;
+            currentlyDraggingElement = elem;
 
             // init drag placeholder
             if (draggingPlaceholder) draggingPlaceholder.remove();
@@ -408,7 +403,7 @@
             }
         },
 
-        dragMove: function(e) {
+        dragMove: function(e, elem) {
             var overEl       = UI.$(document.elementFromPoint(e.pageX - document.body.scrollLeft, e.pageY - (window.pageYOffset || document.documentElement.scrollTop))),
                 overRoot     = overEl.closest('.'+this.options.baseClass),
                 groupOver    = overRoot.data("sortable-group"),
@@ -431,47 +426,44 @@
             };
         },
 
-        dragEnter: function(e) {
-
-            var $this = this,
-                elem  = e.thisElem;
+        dragEnter: function(e, elem) {
 
             if (!currentlyDraggingElement || currentlyDraggingElement === elem) {
                 return true;
             }
 
             // Prevent dragenter on a child from allowing a dragleave on the container
-            var previousCounter = $this.dragenterData(elem);
+            var previousCounter = this.dragenterData(elem);
 
-            $this.dragenterData(elem, previousCounter + 1);
+            this.dragenterData(elem, previousCounter + 1);
 
             if (previousCounter === 0) {
 
-                UI.$(elem).addClass($this.options.overClass);
+                UI.$(elem).addClass(this.options.overClass);
 
-                if (!$this.options.warp) {
-                    $this.moveElementNextTo(currentlyDraggingElement, elem);
+                if (!this.options.warp) {
+                    this.moveElementNextTo(currentlyDraggingElement, elem);
                 }
             }
 
             return false;
         },
 
-        dragEnd: function(e) {
+        dragEnd: function(e, elem) {
 
             var $this = this;
 
             // avoid triggering event twice
             if (currentlyDraggingElement) {
                 // todo: trigger on right element
-                $this.options.stop(e.target);
-                $this.trigger('stop.uk.sortable', [$this]);
+                this.options.stop(elem);
+                this.trigger('stop.uk.sortable', [this]);
             };
 
             currentlyDraggingElement = null;
             currentlyDraggingTarget  = null;
 
-            touchedlists.push($this.element);
+            touchedlists.push(this.element);
             touchedlists.forEach(function(el, i) {
                 UI.$(el).children().each(function() {
                     if (this.nodeType === 1) {
@@ -485,9 +477,9 @@
 
             touchedlists = [];
 
-            UI.$html.removeClass($this.options.dragMovingClass);
+            UI.$html.removeClass(this.options.dragMovingClass);
 
-            $this.removeFakeDragHandlers();
+            this.removeFakeDragHandlers();
 
             if (draggingPlaceholder) {
                 draggingPlaceholder.remove();
@@ -495,10 +487,7 @@
             }
         },
 
-        dragDrop: function(e) {
-
-            var $this = this,
-                el = e.thisElem;
+        dragDrop: function(e, elem) {
 
             if (e.type === 'drop') {
 
@@ -511,20 +500,20 @@
                 }
             }
 
-            if (!dragging && !$this.options.warp) {
+            if (!dragging && !this.options.warp) {
                 return;
             }
 
-            if ($this.options.warp) {
+            if (this.options.warp) {
 
                 var thisSibling = currentlyDraggingElement.nextSibling;
-                el.parentNode.insertBefore(currentlyDraggingElement, el);
-                el.parentNode.insertBefore(el, thisSibling);
+                elem.parentNode.insertBefore(currentlyDraggingElement, elem);
+                elem.parentNode.insertBefore(elem, thisSibling);
 
-                UI.Utils.checkDisplay($this.element.parent());
+                UI.Utils.checkDisplay(this.element.parent());
             }
 
-            $this.triggerChangeEvents();
+            this.triggerChangeEvents();
         },
 
         triggerChangeEvents: function() {
