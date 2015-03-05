@@ -300,7 +300,7 @@
                 };
             }
 
-            window.addEventListener('mousemove', handleDragMove, false);
+            window.addEventListener(supportsTouch ? 'touchmove' : 'mousemove', handleDragMove, false);
             element.addEventListener(supportsTouch ? 'touchstart':'mousedown', handleDragStart, false);
         },
 
