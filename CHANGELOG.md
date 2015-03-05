@@ -1,5 +1,12 @@
 # Changelog
 
+### W.I.P
+
+  - Added trigger ```scrolling.uk.document``` after update grid layout
+  - Added ARIA support to JavaScript core components
+  - Fixed sticky wrapper resize on window resize/orientation change
+
+
 ### 2.17.0 (February 20, 2015)
 
   - IMPORTANT: Removed caption component (Use overlay component)
