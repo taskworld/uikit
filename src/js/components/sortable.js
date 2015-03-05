@@ -20,15 +20,7 @@
     "use strict";
 
     var supportsTouch       = ('ontouchstart' in window) || (window.DocumentTouch && document instanceof DocumentTouch),
-        supportsDragAndDrop = !supportsTouch && (function() {
-        var div = document.createElement('div');
-        return ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
-    })(),
-
-    draggingPlaceholder, currentlyDraggingElement, currentlyDraggingTarget, dragging, moving, clickedlink, delayIdle, touchedlists;
-
-    // disable native dragndrop support for now
-    supportsDragAndDrop = false;
+        draggingPlaceholder, currentlyDraggingElement, currentlyDraggingTarget, dragging, moving, clickedlink, delayIdle, touchedlists;
 
     function closestSortable(ele) {
 
@@ -160,26 +152,22 @@
 
             UI.$(this.element).data('sortable-group', this.options.group );
 
-            if (supportsDragAndDrop) {
-                this.element.children().attr("draggable", "true");
-            } else {
+            // prevent leaving page after link clicking
+            this.element.on('mousedown touchstart', 'a[href]', function(e) {
+                // don't break browser shortcuts for click+open in new tab
+                if(!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    clickedlink = UI.$(this);
+                    e.preventDefault();
+                }
 
-                // prevent leaving page after link clicking
-                this.element.on('mousedown touchstart', 'a[href]', function(e) {
-                    // don't break browser shortcuts for click+open in new tab
-                    if(!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-                        clickedlink = UI.$(this);
-                        e.preventDefault();
-                    }
+            }).on('click', 'a[href]', function(e) {
+                if(!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    clickedlink = UI.$(this);
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
 
-                }).on('click', 'a[href]', function(e) {
-                    if(!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-                        clickedlink = UI.$(this);
-                        e.stopImmediatePropagation();
-                        return false;
-                    }
-                });
-            }
 
             var handleDragStart = delegate(function(e) {
                 return $this.dragStart(e, this);
@@ -246,34 +234,29 @@
             // Opera and mobile devices do not support drag and drop.  http://caniuse.com/dragndrop
             // Bind/unbind standard mouse/touch events as a polyfill.
             function addFakeDragHandlers() {
-                if (!supportsDragAndDrop) {
-                    if (supportsTouch) {
-                        element.addEventListener("touchmove", handleTouchMove, false);
-                    } else {
-                        element.addEventListener('mouseover', handleDragEnter, false);
-                        element.addEventListener('mouseout', handleDragLeave, false);
-                    }
-
-                    element.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDrop, false);
-                    // document.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
-                    // document.addEventListener("selectstart", prevent, false);
-
+                if (supportsTouch) {
+                    element.addEventListener("touchmove", handleTouchMove, false);
+                } else {
+                    element.addEventListener('mouseover', handleDragEnter, false);
+                    element.addEventListener('mouseout', handleDragLeave, false);
                 }
+
+                element.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDrop, false);
+                // document.addEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
+                // document.addEventListener("selectstart", prevent, false);
             }
 
             function removeFakeDragHandlers() {
-                if (!supportsDragAndDrop) {
-                    if (supportsTouch) {
-                        element.removeEventListener("touchmove", handleTouchMove, false);
-                    } else {
-                        element.removeEventListener('mouseover', handleDragEnter, false);
-                        element.removeEventListener('mouseout', handleDragLeave, false);
-                    }
-
-                    element.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDrop, false);
-                    // document.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
-                    // document.removeEventListener("selectstart", prevent, false);
+                if (supportsTouch) {
+                    element.removeEventListener("touchmove", handleTouchMove, false);
+                } else {
+                    element.removeEventListener('mouseover', handleDragEnter, false);
+                    element.removeEventListener('mouseout', handleDragLeave, false);
                 }
+
+                element.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDrop, false);
+                // document.removeEventListener(supportsTouch ? 'touchend' : 'mouseup', handleDragEnd, false);
+                // document.removeEventListener("selectstart", prevent, false);
             }
 
             this.addFakeDragHandlers    = addFakeDragHandlers;
@@ -318,18 +301,7 @@
             }
 
             window.addEventListener('mousemove', handleDragMove, false);
-
-            if (supportsDragAndDrop) {
-                element.addEventListener('dragstart', handleDragStart, false);
-                element.addEventListener('dragenter', handleDragEnter, false);
-                element.addEventListener('dragleave', handleDragLeave, false);
-                element.addEventListener('drop', handleDrop, false);
-                element.addEventListener('dragover', handleDragOver, false);
-                element.addEventListener('dragend', handleDragEnd, false);
-            } else {
-
-                element.addEventListener(supportsTouch ? 'touchstart':'mousedown', handleDragStart, false);
-            }
+            element.addEventListener(supportsTouch ? 'touchstart':'mousedown', handleDragStart, false);
         },
 
         dragStart: function(e, elem) {
@@ -408,9 +380,7 @@
                 }
             }
 
-            if (!supportsDragAndDrop) {
-                e.preventDefault();
-            }
+            e.preventDefault();
         },
 
         dragMove: function(e, elem) {
@@ -679,8 +649,6 @@
         }
         e.returnValue = false;
     }
-
-
 
     return UI.sortable;
 });
