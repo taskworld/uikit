@@ -510,11 +510,11 @@
             element = UI.$(element);
 
             if (arguments.length == 1) {
-                return parseInt(element.attr('data-child-dragenter'), 10) || 0;
+                return parseInt(element.data('child-dragenter'), 10) || 0;
             } else if (!val) {
-                element.removeAttr('data-child-dragenter');
+                element.removeData('child-dragenter');
             } else {
-                element.attr('data-child-dragenter', Math.max(0, val));
+                element.data('child-dragenter', Math.max(0, val));
             }
         },
 
@@ -568,7 +568,7 @@
 
                     setTimeout(function(){
                         ele.animate({'top':offset.top, 'left':offset.left}, $this.options.animation, function() {
-                            ele.css({'position':'','top':'', 'left':'', 'min-width': '', 'pointer-events':''}).removeClass($this.options.overClass).attr('data-child-dragenter', '');
+                            ele.css({'position':'','top':'', 'left':'', 'min-width': '', 'pointer-events':''}).removeClass($this.options.overClass).removeData('child-dragenter');
                             count--;
                             if (!count) {
                                 list.css('min-height', '');
@@ -581,10 +581,16 @@
 
         serialize: function() {
 
-            var data = [], item;
+            var data = [], item, attribute;
 
-            this.element.children().each(function() {
-                item = UI.$.extend({}, UI.$(this).data());
+            this.element.children().each(function(j, child) {
+                item = {};
+                for (var i = 0; i < child.attributes.length; i++) {
+                    attribute = child.attributes[i];
+                    if (attribute.name.indexOf('data-') === 0) {
+                        item[attribute.name.substr(5)] = UI.Utils.str2json(attribute.value);
+                    }
+                }
                 data.push(item);
             });
 
