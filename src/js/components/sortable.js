@@ -120,7 +120,11 @@
                 delayIdle = clickedlink = false;
 
                 // dragging?
-                if (!currentlyDraggingElement || !draggingPlaceholder) return;
+                if (!currentlyDraggingElement || !draggingPlaceholder) {
+                    // completely reset dragging attempt. will cause weird delay behavior elsewise
+                    currentlyDraggingElement = draggingPlaceholder = null;
+                    return;
+                }
 
                 // inside or outside of sortable?
                 var sortable  = closestSortable(e.target),
@@ -131,7 +135,6 @@
                     component.dragDrop(ev, component.element);
                 }
                 component.dragEnd(ev, component.element);
-
             });
         },
 
@@ -289,7 +292,7 @@
             }
 
             window.addEventListener(supportsTouch ? 'touchmove' : 'mousemove', handleDragMove, false);
-            element.addEventListener(supportsTouch ? 'touchstart':'mousedown', handleDragStart, false);
+            element.addEventListener(supportsTouch ? 'touchstart': 'mousedown', handleDragStart, false);
         },
 
         dragStart: function(e, elem) {
