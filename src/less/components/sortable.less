@@ -29,6 +29,9 @@
 
 @sortable-over-opacity:                         0.3;
 
+@sortable-empty-height:                         30px;
+@sortable-empty-border:                         #aaa;
+
 
 /* ========================================================================
    Component: Sortable
@@ -62,6 +65,32 @@
 .uk-sortable > * * {
     -webkit-user-drag: none;
     user-drag: none;
+}
+
+/*
+ * Give empty lists a placeholder style to make sure drag and drop works
+ */
+
+.uk-sortable:empty::after {
+    height: @sortable-empty-height;
+    width: 100%;
+    border: 1px dashed @sortable-empty-border;
+}
+.uk-sortable:empty {
+    min-height: @sortable-empty-height;
+}
+
+/*
+ * Handle empty list inside grid
+ */
+
+.uk-grid .uk-sortable:empty::after {
+    margin-left: @grid-gutter-horizontal;
+}
+@media (min-width: @breakpoint-xlarge) {
+    .uk-grid .uk-sortable:empty::after {
+        margin-left: @grid-gutter-large-horizontal;
+    }
 }
 
 

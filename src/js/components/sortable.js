@@ -153,6 +153,11 @@
                 }
             });
 
+            // make sure :empty selector works on empty lists
+            if (this.element.children().length === 0) {
+                this.element.html('');
+            }
+
             UI.$(this.element).data('sortable-group', this.options.group );
 
             // prevent leaving page after link clicking
@@ -390,8 +395,17 @@
                 overRoot.children().addClass(this.options.childClass);
 
                 // swap root
-                overChild = overEl.closest('.'+this.options.childClass);
-                overChild.before($current);
+                if (overRoot.children().length > 0) {
+                    overChild = overEl.closest('.'+this.options.childClass);
+                    overChild.before($current);
+                } else { // empty list
+                    overEl.append($current);
+                }
+
+                // list empty? remove inner whitespace to make sure :empty selector works
+                if (currentRoot.children().length === 0) {
+                    currentRoot.html('');
+                }
 
                 UIkit.$doc.trigger('mouseover');
             }
