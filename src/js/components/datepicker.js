@@ -195,6 +195,7 @@
                         active.element.val(moment(ele.data("date")).format(active.options.format)).trigger("change");
                         dropdown.hide();
                         active = false;
+                        $this.trigger('pick.uk.datepicker');
                     } else {
                        active.add(1 * (ele.hasClass("uk-datepicker-next") ? 1:-1), "months");
                     }
